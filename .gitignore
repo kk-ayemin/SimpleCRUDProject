@@ -1,0 +1,9 @@
+# Ignore all log files
+*.log
+
+# Ignore specific files
+bin/
+obj/
+appsettings*.json
+
+
