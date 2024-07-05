@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ApiTest.Models;
+using ApiTest.DTOs;
 
 namespace ApiTest.Controllers
 {
@@ -20,7 +21,7 @@ namespace ApiTest.Controllers
 
         // POST api/user
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] TblUser user)
+        public async Task<IActionResult> CreateUser([FromBody] UserDTO userDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -31,37 +32,63 @@ namespace ApiTest.Controllers
             {
                 var newUser = new TblUser
                 {
-                    Username = user.Username,
-                    Password = user.Password,
-                    IsActive = user.IsActive,
-                    Name = user.Name
+                    Username = userDTO.Username,
+                    Password = userDTO.Password,
+                    IsActive = userDTO.IsActive,
+                    Name = userDTO.Name
                 };
 
                 _context.TblUsers.Add(newUser);
                 await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
+
+                var createdUser = new 
+                {
+                    newUser.Id,
+                    userDTO.Username,
+                    userDTO.Password,
+                    userDTO.IsActive,
+                    userDTO.Name,
+                };
+
+                return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         // GET api/user
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TblUser>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
         {
-            return await _context.TblUsers
+            var users = await _context.TblUsers
+                .Select(u => new UserDTO
+                {
+                    Username = u.Username,
+                    Password = u.Password,
+                    IsActive = u.IsActive ?? false,
+                    Name = u.Name,
+                })
                 .ToListAsync();
+
+            return users;
         }
 
         // GET api/user/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<TblUser>> GetUserById(int id)
+        public async Task<ActionResult<UserDTO>> GetUserById(int id)
         {
             var user = await _context.TblUsers
-                .Include(u => u.TblPosts)
-                .Include(u => u.TblComments)
-                .FirstOrDefaultAsync(u => u.Id == id);
+                .Where(u => u.Id == id)
+                .Select(u => new UserDTO
+                {
+                    Username = u.Username,
+                    Password = u.Password,
+                    IsActive = u.IsActive ?? false,
+                    Name = u.Name,
+                })
+                .FirstOrDefaultAsync();
 
             if (user == null)
             {
@@ -89,29 +116,30 @@ namespace ApiTest.Controllers
 
         // PUT api/user/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id,[FromBody] TblUser updatedUser)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDTO updatedUserDTO)
         {
-            if (id != updatedUser.Id){
-                return BadRequest("User ID mismatch");
-            }
-            if (!ModelState.IsValid){
+
+            if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
             }
+
             var user = await _context.TblUsers.FindAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            user.Username = updatedUser.Username;
-            user.Password = updatedUser.Password; 
-            user.IsActive = updatedUser.IsActive;
-            user.Name = updatedUser.Name;
-            try{
-                 await _context.SaveChangesAsync();
+            user.Username = updatedUserDTO.Username;
+            user.Password = updatedUserDTO.Password;
+            user.IsActive = updatedUserDTO.IsActive;
+            user.Name = updatedUserDTO.Name;
 
-                 return Ok(user);
+            try
+            {
+                await _context.SaveChangesAsync();
 
+                return Ok(updatedUserDTO);
             }
             catch (Exception)
             {

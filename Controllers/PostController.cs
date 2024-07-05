@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ApiTest.Models;
+using ApiTest.DTOs;
 
 namespace ApiTest.Controllers
 {
@@ -20,7 +21,7 @@ namespace ApiTest.Controllers
 
         // POST api/post
         [HttpPost]
-        public async Task<IActionResult> CreatePost([FromBody] TblPost post)
+        public async Task<IActionResult> CreatePost([FromBody] PostDTO postDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -29,37 +30,61 @@ namespace ApiTest.Controllers
 
             try
             {
+                var userExists = await _context.TblUsers.AnyAsync(u => u.Id == postDTO.UserId);
+                if (!userExists){
+                    return NotFound($"User ID {postDTO.UserId} not found");
+                }
                 var newPost = new TblPost
                 {
-                    PostText = post.PostText,
-                    UserId = post.UserId,
+                    PostText = postDTO.PostText,
+                    UserId = postDTO.UserId,
                 };
 
                 _context.TblPosts.Add(newPost);
                 await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetPostById), new { id = newPost.PostId }, newPost);
+
+                var createdPost = new 
+                {
+                    newPost.PostId,
+                    postDTO.PostText,
+                    postDTO.UserId
+                };
+
+                return CreatedAtAction(nameof(GetPostById), new { id = createdPost.PostId }, createdPost);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         // GET api/post
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TblPost>>> GetPosts()
+        public async Task<ActionResult<IEnumerable<PostDTO>>> GetPosts()
         {
-            return await _context.TblPosts
+            var posts = await _context.TblPosts
+                .Select(p => new PostDTO
+                {
+                    PostText = p.PostText,
+                    UserId = p.UserId,
+                })
                 .ToListAsync();
+
+            return posts;
         }
 
         // GET api/post/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<TblPost>> GetPostById(int id)
+        public async Task<ActionResult<PostDTO>> GetPostById(int id)
         {
             var post = await _context.TblPosts
-                .Include(p => p.TblComments)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.PostId == id);
+                .Where(p => p.PostId == id)
+                .Select(p => new PostDTO
+                {
+                    PostText = p.PostText,
+                    UserId = p.UserId,
+                })
+                .FirstOrDefaultAsync();
 
             if (post == null)
             {
@@ -87,24 +112,27 @@ namespace ApiTest.Controllers
 
         // PUT api/post/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePost(int id,[FromBody] TblPost updatedPost)
+        public async Task<IActionResult> UpdatePost(int id, [FromBody] PostDTO updatedPostDTO)
         {
-            if (!ModelState.IsValid){
+            if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
             }
+
             var post = await _context.TblPosts.FindAsync(id);
             if (post == null)
             {
                 return NotFound();
             }
 
-            post.PostText = updatedPost.PostText; 
+            post.PostText = updatedPostDTO.PostText;
+            updatedPostDTO.UserId = post.UserId;
 
-            try{
-                 await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
 
-                 return Ok(post);
-
+                return Ok(updatedPostDTO);
             }
             catch (Exception)
             {

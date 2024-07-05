@@ -135,3 +135,4 @@
 /home/kk/C# Projects/ApiTest/obj/Debug/net8.0/ApiTest.pdb
 /home/kk/C# Projects/ApiTest/obj/Debug/net8.0/ApiTest.genruntimeconfig.cache
 /home/kk/C# Projects/ApiTest/obj/Debug/net8.0/ref/ApiTest.dll
+/home/kk/C# Projects/ApiTest/obj/Debug/net8.0/ApiTest.sourcelink.json
