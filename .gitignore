@@ -4,6 +4,4 @@
 # Ignore specific files
 bin/
 obj/
-appsettings*.json
-
 

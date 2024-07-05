@@ -1,0 +1,63 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tbl_comments](
+	[comment_id] [int] IDENTITY(100001,1) NOT NULL,
+	[comment_text] [text] NULL,
+	[user_id] [int] NULL,
+	[post_id] [int] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Tbl_comments] ADD  CONSTRAINT [PK_cmt] PRIMARY KEY CLUSTERED 
+(
+	[comment_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Tbl_comments]  WITH CHECK ADD  CONSTRAINT [FK_cmmtusr] FOREIGN KEY([user_id])
+REFERENCES [dbo].[Tbl_user] ([id])
+GO
+ALTER TABLE [dbo].[Tbl_comments] CHECK CONSTRAINT [FK_cmmtusr]
+GO
+ALTER TABLE [dbo].[Tbl_comments]  WITH CHECK ADD  CONSTRAINT [FK_post] FOREIGN KEY([post_id])
+REFERENCES [dbo].[Tbl_posts] ([post_id])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[Tbl_comments] CHECK CONSTRAINT [FK_post]
+GO
+
+CREATE TABLE [dbo].[Tbl_posts](
+	[post_id] [int] IDENTITY(1001,1) NOT NULL,
+	[post_text] [text] NULL,
+	[user_id] [int] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Tbl_posts] ADD  CONSTRAINT [PK_post] PRIMARY KEY CLUSTERED 
+(
+	[post_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Tbl_posts]  WITH CHECK ADD  CONSTRAINT [FK_usr] FOREIGN KEY([user_id])
+REFERENCES [dbo].[Tbl_user] ([id])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[Tbl_posts] CHECK CONSTRAINT [FK_usr]
+GO
+
+GO
+CREATE TABLE [dbo].[Tbl_user](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[username] [varchar](255) NOT NULL,
+	[password] [varchar](255) NOT NULL,
+	[is_active] [bit] NULL,
+	[name] [varchar](255) NOT NULL
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Tbl_user] ADD  CONSTRAINT [pk_user] PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Tbl_user] ADD  CONSTRAINT [is_active_def]  DEFAULT ((1)) FOR [is_active]
+GO
+
